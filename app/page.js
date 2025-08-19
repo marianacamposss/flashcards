@@ -5,7 +5,7 @@ import { useState, useRef } from 'react';
 const flashcards = [
     {
         frente: 'O que é um Gerador Elétrico?',
-        verso: 'Dispositivo que transforma energia não elétrica (como química, luminosa ou mecânica) em energia elétrica, fornecendo-a a um circuito.'
+        verso: 'Um dispositivo que transforma energia não elétrica (como química, luminosa ou mecânica) em energia elétrica, fornecendo-a a um circuito.'
     },
     {
         frente: 'O que é Força Eletromotriz (f.e.m.)?',
