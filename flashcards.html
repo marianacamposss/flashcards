@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flashcards de Física</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #344e41;
+            --card-bg-color: #3a5a40;
+            --text-color: #dad7cd;
+            --accent-color: #a3b18a;
+            --button-hover-color: #588157;
+            --correct-color: #588157;
+            --incorrect-color: #e63946;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Lato', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 2.5em;
+            font-weight: 700;
+            color: var(--accent-color);
+        }
+
+        header p {
+            font-size: 1em;
+            opacity: 0.8;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 700px;
+        }
+
+        .card-container {
+            width: 100%;
+            height: 350px;
+            perspective: 1000px;
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .flashcard {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.8s, opacity 0.5s;
+            cursor: pointer;
+            touch-action: none;
+        }
+
+        .flashcard.is-flipped {
+            transform: rotateY(180deg);
+        }
+
+        /* Animações de swipe */
+        .flashcard.swipe-right {
+            transform: translateX(150%) rotate(20deg);
+            opacity: 0;
+        }
+
+        .flashcard.swipe-left {
+            transform: translateX(-150%) rotate(-20deg);
+            opacity: 0;
+        }
+
+        .flashcard-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        .flashcard-front {
+            background-color: var(--card-bg-color);
+        }
+
+        .flashcard-back {
+            background-color: var(--accent-color);
+            color: var(--bg-color);
+            transform: rotateY(180deg);
+        }
+
+        .flashcard-face p {
+            font-size: 1.2em;
+            line-height: 1.6;
+            font-weight: 400;
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+            background-color: var(--accent-color);
+            border: none;
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-size: 1em;
+            font-weight: 700;
+            font-family: 'Montserrat', sans-serif;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+            color: var(--bg-color);
+        }
+
+        button:hover {
+            background-color: var(--button-hover-color);
+            transform: translateY(-2px);
+        }
+
+        .score {
+            display: flex;
+            gap: 20px;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .score span.correct {
+            color: var(--correct-color);
+        }
+
+        .score span.incorrect {
+            color: var(--incorrect-color);
+        }
+
+        /* Responsividade */
+        @media (max-width: 600px) {
+            header h1 {
+                font-size: 2em;
+            }
+
+            .card-container {
+                height: 300px;
+            }
+
+            .flashcard-face p {
+                font-size: 1em;
+            }
+
+            .controls {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Flashcards de Física</h1>
+        <p>Estude os conceitos de Geradores, Receptores e Componentes Elétricos</p>
+    </header>
+
+    <main class="container">
+        <div class="score">
+            <span id="correct-count" class="correct">Acertos: 0</span>
+            <span id="incorrect-count" class="incorrect">Erros: 0</span>
+        </div>
+        <div class="card-container">
+            <div id="flashcard" class="flashcard">
+                <div class="flashcard-face flashcard-front">
+                    <p id="card-frente"></p>
+                </div>
+                <div class="flashcard-face flashcard-back">
+                    <p id="card-verso"></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="restart-btn">Reiniciar</button>
+        </div>
+        
+        <div class="counter">
+            <span id="card-counter">1/20</span>
+        </div>
+    </main>
+
+    <script>
+        const flashcards = [
+            {
+                frente: 'O que é um Gerador Elétrico?',
+                verso: 'Dispositivo que transforma energia não elétrica (como química, luminosa ou mecânica) em energia elétrica, fornecendo-a a um circuito.'
+            },
+            {
+                frente: 'O que é Força Eletromotriz (f.e.m.)?',
+                verso: 'É a diferença de potencial (ddp) entre os terminais de um gerador quando ele não é percorrido por corrente elétrica.'
+            },
+            {
+                frente: 'Qual a função de um Receptor Elétrico?',
+                verso: 'Transforma energia elétrica em outras formas de energia (que não seja exclusivamente térmica), como energia mecânica (motores).'
+            },
+            {
+                frente: 'O que é um Capacitor?',
+                verso: 'É um componente eletrônico que armazena energia elétrica temporariamente, constituído por duas placas condutoras (armaduras) separadas por um material isolante (dielétrico).'
+            },
+            {
+                frente: 'O que são a armadura coletora e a condensadora de um capacitor?',
+                verso: 'A coletora ganha carga negativa (-), enquanto a condensadora fica com carga positiva (+).'
+            },
+            {
+                frente: 'Qual a função de um Transformador?',
+                verso: 'Aumentar ou diminuir a tensão elétrica em um circuito de corrente alternada (AC) sem mudar a potência (em condições ideais).'
+            },
+            {
+                frente: 'Para que servem Fusíveis e Disjuntores?',
+                verso: 'São dispositivos de proteção que protegem circuitos elétricos contra sobrecarga. O fusível é descartável, e o disjuntor é reutilizável.'
+            },
+            {
+                frente: 'O que é um Dielétrico?',
+                verso: 'É um material isolante, utilizado para separar as placas de um capacitor.'
+            },
+            {
+                frente: 'Qual a diferença entre a função do resistor, gerador e receptor?',
+                verso: 'Resistor: Transforma energia elétrica APENAS em energia térmica. Gerador: Transforma energia NÃO elétrica em energia elétrica. Receptor: Transforma energia elétrica em energia NÃO térmica.'
+            },
+            {
+                frente: 'O que é um Gerador ideal?',
+                verso: 'Um gerador que não tem resistência interna (r=0).'
+            },
+            {
+                frente: 'O que é um Gerador real?',
+                verso: 'Um gerador que possui resistência interna (r > 0), o que faz com que a ddp em seus terminais diminua à medida que a corrente aumenta.'
+            },
+            {
+                frente: 'O que a equação U = E - r.i representa?',
+                verso: 'A relação entre a tensão (U) nos terminais de um gerador, a f.e.m. (E), a resistência interna (r) e a corrente elétrica (i) que o percorre.'
+            },
+            {
+                frente: 'O que o ponto de curto-circuito em um gráfico de gerador significa?',
+                verso: 'É o ponto onde a tensão (U) é zero e a corrente elétrica é máxima (i_cc = E/r).'
+            },
+            {
+                frente: 'O que a equação U = E\' + r\'.i representa?',
+                verso: 'A relação entre a tensão (U) nos terminais de um receptor, a força contraeletromotriz (E\'), a resistência interna (r\') e a corrente elétrica (i) que o percorre.'
+            },
+            {
+                frente: 'O que o gráfico de um gerador (ddp x corrente) indica?',
+                verso: 'É uma reta decrescente. O ângulo da inclinação indica a resistência interna: quanto maior a inclinação, maior a resistência interna.'
+            },
+            {
+                frente: 'O que o gráfico de um receptor (ddp x corrente) indica?',
+                verso: 'É uma reta crescente. A ddp nos terminais do receptor aumenta com a corrente.'
+            },
+            {
+                frente: 'O que é a Potência Total, Potência Útil e Potência Dissipada de um gerador?',
+                verso: 'Potência Total (P_total) = E.i; Potência Útil (P_útil) = U.i; Potência Dissipada (P_dissipada) = r.i².'
+            },
+            {
+                frente: 'O que é a Força Contraeletromotriz (f.c.e.m.)?',
+                verso: 'É a diferença de potencial gerada por um receptor em oposição à corrente elétrica que o percorre.'
+            },
+            {
+                frente: 'Quais são os principais tipos de bobina mencionados nos slides?',
+                verso: 'Bobina de núcleo de ar, bobina de núcleo de ferrite e bobina toroidal.'
+            },
+            {
+                frente: 'Como um transformador funciona?',
+                verso: 'Um transformador usa um campo magnético variável gerado em uma bobina primária para induzir uma tensão em uma bobina secundária, com a tensão final dependendo da relação de voltas entre as bobinas.'
+            }
+        ];
+
+        let currentIndex = 0;
+        let correctCount = 0;
+        let incorrectCount = 0;
+        let isFlipping = false;
+
+        const flashcard = document.getElementById('flashcard');
+        const cardFrente = document.getElementById('card-frente');
+        const cardVerso = document.getElementById('card-verso');
+        const restartBtn = document.getElementById('restart-btn');
+        const cardCounter = document.getElementById('card-counter');
+        const correctCountEl = document.getElementById('correct-count');
+        const incorrectCountEl = document.getElementById('incorrect-count');
+
+        let touchstartX = 0;
+        let touchendX = 0;
+        let mouseIsDown = false;
+        let mouseStartX = 0;
+
+        function showCard() {
+            flashcard.classList.remove('is-flipped', 'swipe-right', 'swipe-left');
+            flashcard.style.transform = '';
+            
+            cardFrente.textContent = flashcards[currentIndex].frente;
+            cardVerso.textContent = flashcards[currentIndex].verso;
+            cardCounter.textContent = `${currentIndex + 1}/${flashcards.length}`;
+            isFlipping = false;
+        }
+
+        function updateScore() {
+            correctCountEl.textContent = `Acertos: ${correctCount}`;
+            incorrectCountEl.textContent = `Erros: ${incorrectCount}`;
+        }
+
+        function handleSwipe(direction) {
+            if (isFlipping) return;
+            isFlipping = true;
+
+            if (direction === 'right') {
+                correctCount++;
+                flashcard.classList.add('swipe-right');
+            } else if (direction === 'left') {
+                incorrectCount++;
+                flashcard.classList.add('swipe-left');
+            }
+
+            updateScore();
+            
+            setTimeout(() => {
+                currentIndex = (currentIndex + 1) % flashcards.length;
+                showCard();
+            }, 500);
+        }
+
+        // Evento para virar o card ao clicar/tocar
+        flashcard.addEventListener('click', () => {
+             // Impede que o flip ocorra durante o swipe
+            if (!isFlipping) {
+                flashcard.classList.toggle('is-flipped');
+            }
+        });
+
+        // Evento para reiniciar
+        restartBtn.addEventListener('click', () => {
+            currentIndex = 0;
+            correctCount = 0;
+            incorrectCount = 0;
+            updateScore();
+            showCard();
+        });
+
+        // Eventos para Desktop (mouse)
+        flashcard.addEventListener('mousedown', e => {
+            mouseIsDown = true;
+            mouseStartX = e.clientX;
+            flashcard.style.transition = 'none';
+        });
+
+        flashcard.addEventListener('mousemove', e => {
+            if (!mouseIsDown) return;
+            const mouseDeltaX = e.clientX - mouseStartX;
+            flashcard.style.transform = `translateX(${mouseDeltaX}px)`;
+        });
+
+        flashcard.addEventListener('mouseup', e => {
+            if (!mouseIsDown) return;
+            mouseIsDown = false;
+            flashcard.style.transition = 'transform 0.8s';
+            const mouseDeltaX = e.clientX - mouseStartX;
+            if (mouseDeltaX > 100) {
+                handleSwipe('right');
+            } else if (mouseDeltaX < -100) {
+                handleSwipe('left');
+            } else {
+                flashcard.style.transform = '';
+            }
+        });
+
+        // Eventos para Mobile (touch)
+        flashcard.addEventListener('touchstart', e => {
+            touchstartX = e.touches[0].clientX;
+            flashcard.style.transition = 'none';
+        });
+
+        flashcard.addEventListener('touchmove', e => {
+            touchendX = e.touches[0].clientX;
+            const touchDeltaX = touchendX - touchstartX;
+            flashcard.style.transform = `translateX(${touchDeltaX}px)`;
+        });
+
+        flashcard.addEventListener('touchend', e => {
+            flashcard.style.transition = 'transform 0.8s';
+            const touchDeltaX = touchendX - touchstartX;
+            if (touchDeltaX > 100) {
+                handleSwipe('right');
+            } else if (touchDeltaX < -100) {
+                handleSwipe('left');
+            } else {
+                flashcard.style.transform = '';
+            }
+        });
+
+        // Inicia o site
+        showCard();
+        updateScore();
+    </script>
+</body>
+</html>
